@@ -72,7 +72,6 @@ clienMqtt.on('connect', function () {
     function(){ 
         let array = []
         getArrayOfVariablesString().then((res)=> {
-            console.log(res)
             array = res
         })
 
