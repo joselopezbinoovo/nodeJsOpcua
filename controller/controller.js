@@ -40,9 +40,6 @@ const getOne = async (req, res) => {
                 id: id
             }
         })
-
-        console.log(OpcUaById.dataValues.variableString);
-
         const nodeId = OpcUaById.dataValues.variableString;
 
         const cliet = OPCUAClient.create();
@@ -111,11 +108,9 @@ const opc = async (req, res) => {
         array.push(element.dataValues.variableString)
        });
          
-       console.log(array);
 
         let ArrayplcValues = await Promise.all(array.map( async (nodeId) => {
         let plcValue = await session.read({nodeId:nodeId,AttributeId: AttributeIds.Value,TimestampsToReturn:TimestampsToReturn.Both}); 
-       console.log(plcValue.value.value);
         return plcValue.value.value
     }));  //montar en segundo plano   
 

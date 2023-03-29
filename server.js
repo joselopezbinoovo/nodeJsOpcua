@@ -52,7 +52,7 @@ clienMqtt.on('connect', function () {
     clienMqtt.end()
   }) */
 
-  const getArrayPlc = async.series([
+/*   const getArrayPlc = async.series([
     function(callback){
         console.log(callback);
         client.connect(endPointOPc,(err)=>{
@@ -85,9 +85,9 @@ clienMqtt.on('connect', function () {
         },1000)
     } 
 ]) 
+ */
 
-
-/* const triggersOPs=[
+const triggersOPs=[
     'ns=2;s=Simulation_Examples.Functions.Ramp1',
     'ns=2;s=Simulation_Examples.Functions.Ramp2',
     'ns=2;s=Simulation_Examples.Functions.Ramp3',
@@ -112,10 +112,10 @@ clienMqtt.on('connect', function () {
     'ns=2;s=Simulation_Examples.Functions.User2',
     'ns=2;s=Simulation_Examples.Functions.User3',
     'ns=2;s=Simulation_Examples.Functions.User4'
-  ] */
+  ] 
 
 
-/* async.series([
+async.series([
     function(callback){
         console.log(callback);
         client.connect(endPointOPc,(err)=>{
@@ -132,30 +132,27 @@ clienMqtt.on('connect', function () {
             cb()
         })
     },
-    function(callback){ 
+    async function(){ 
        let array = []
         getArrayOfVariablesString().then((res)=> {
             array = res
         }) 
-        var err;    
+
         var nodes_to_read = [  ];
              
                 triggersOPs.forEach(function(entry) {
                     nodes_to_read.push({ nodeId: entry, AttributeIds: AttributeIds.Value });
                });
-               console.log(nodes_to_read);
                var max_age = 0;
-               the_session.read(nodes_to_read, max_age, function(err,nodes_to_read,dataValues) {
-                   if (!err) {
-                       for(var i;i<dataValues.length;i++) {
-                              console.log(entry , dataValues[i].toString());
-                        }
-                   }
-                   // now callback is called once
-                   callback(err);
-             });
+               setInterval(async()=>{
+                let plcsValues = await the_session.read(nodes_to_read, max_age)
+                plcsValues.forEach(value=> {
+                 console.log(value.value.value);
+                })
+
+               },1000)     
     } 
-])   */
+])   
 
  
 //module.exports = getArrayPlc
