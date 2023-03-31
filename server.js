@@ -87,7 +87,7 @@ clienMqtt.on('connect', function () {
 ]) 
  */
 
-const triggersOPs=[
+/* const triggersOPs=[
     'ns=2;s=Simulation_Examples.Functions.Ramp1',
     'ns=2;s=Simulation_Examples.Functions.Ramp2',
     'ns=2;s=Simulation_Examples.Functions.Ramp3',
@@ -113,11 +113,10 @@ const triggersOPs=[
     'ns=2;s=Simulation_Examples.Functions.User3',
     'ns=2;s=Simulation_Examples.Functions.User4'
   ] 
+ */
 
-
-async.series([
+ async.series([
     function(callback){
-        console.log(callback);
         client.connect(endPointOPc,(err)=>{
             if (err){
                 console.log(`No se puede connectar al endpoint:${endPointOPc}`);
@@ -133,27 +132,25 @@ async.series([
         })
     },
     async function(){ 
-       let array = []
-        getArrayOfVariablesString().then((res)=> {
-            array = res
-        }) 
+      
+        getArrayOfVariablesString().then((res)=>{
+            let nodes_to_read = [];
+            res.forEach(function(entry) {
+                nodes_to_read.push({ nodeId: entry, AttributeIds: AttributeIds.Value });
+           });
+           var max_age = 0;
+           setInterval(async()=>{
+            let plcsValues = await the_session.read(nodes_to_read, max_age)
+            plcsValues.forEach(value=> {
+      
+            })
 
-        var nodes_to_read = [  ];
-             
-                triggersOPs.forEach(function(entry) {
-                    nodes_to_read.push({ nodeId: entry, AttributeIds: AttributeIds.Value });
-               });
-               var max_age = 0;
-               setInterval(async()=>{
-                let plcsValues = await the_session.read(nodes_to_read, max_age)
-                plcsValues.forEach(value=> {
-                 console.log(value.value.value);
-                })
+           },1000)     
 
-               },1000)     
+        })
     } 
 ])   
-
+ 
  
 //module.exports = getArrayPlc
 

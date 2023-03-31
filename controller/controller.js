@@ -107,12 +107,19 @@ const opc = async (req, res) => {
         myOpcVariable.forEach(element => {
         array.push(element.dataValues.variableString)
        });
-         
+       let nodes_to_read=[]; 
+       array.forEach((nodeId)=>{
+            nodes_to_read.push({nodeId:nodeId,AttributeIds: AttributeIds.Value})
+       })
+       let max_age = 0; 
+       let plcsValues = await session.read(nodes_to_read, max_age)
 
-        let ArrayplcValues = await Promise.all(array.map( async (nodeId) => {
-        let plcValue = await session.read({nodeId:nodeId,AttributeId: AttributeIds.Value,TimestampsToReturn:TimestampsToReturn.Both}); 
-        return plcValue.value.value
-    }));  //montar en segundo plano   
+       let ArrayplcValues = []
+        plcsValues.forEach((index)=>{
+            console.log(index.value.value);
+            return ArrayplcValues.push(index.value.value)
+        })
+
 
        const arrayOfVariableNames=[]
         myOpcVariable.forEach(element => {
