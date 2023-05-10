@@ -30,7 +30,6 @@ const getAll = async (req, res) => {
         })
     }
 }
-
 const getOne = async (req, res) => {
 
     try {
@@ -59,6 +58,8 @@ const getOne = async (req, res) => {
             data: plcValue
         })
 
+        
+
     await session.close(); 
     await client.disconnect();
 
@@ -72,25 +73,9 @@ const getOne = async (req, res) => {
     }
 }
 
-
-
-const opc = async (req, res) => {
-    
+const opc = async (req, res) => {  
     try {
-        /*     let node_to_read=[]
-    array.forEach((entry)=> {
-     node_to_read.push({nodeId:entry,AttributeId: AttributeIds.Value})
-    })
-    console.log(node_to_read); 
 
-    let plcValue = await session.read(node_to_read,max_age,function(err,node_to_read,dataValues){
-        if (!err) {
-            for(var i;i<dataValues.length;i++) {
-                   console.log(entry , dataValues[i].toString());
-             }
-        }
-    }) */
-       
         const myOpcVariable = await opcUa.findAll()
 
         const cliet = OPCUAClient.create();
@@ -120,14 +105,12 @@ const opc = async (req, res) => {
             return ArrayplcValues.push(index.value.value)
         })
 
-
        const arrayOfVariableNames=[]
         myOpcVariable.forEach(element => {
             arrayOfVariableNames.push({name:element.dataValues.variableName});
         });
         const ValueObject = arrayOfVariableNames.map((item,indice) => ({...item,valuePLC:ArrayplcValues[indice] }))
       
- 
         res.status(200).json({
             msg: 'FUNCIONA',
             data: ValueObject

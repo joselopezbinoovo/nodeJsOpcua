@@ -3,19 +3,28 @@ const app = express();
 const cors = require("cors");
 const async = require('async')
 const { sequelize} = require('./models/index')
-const {OPCUAServer,OPCUAClient,AttributeIds,StatusCode,TimestampsToReturn} = require("node-opcua");
-const endPointOPc = 'opc.tcp://192.168.200.197:49320'
-const client = OPCUAClient.create({endpointMustExist: false});
+const {OPCUAClient,AttributeIds} = require("node-opcua");
 const {getArrayOfVariablesString} = require('./controller/controller');
-const mqtt=require('mqtt');
-
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+const PORT = 8080;
 
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.json ());
- app.use(cors());
-
+app.use(cors());
 app.use("/api/opcUa",require("./routes/opcUaRouter"));
+
+io.on('connection', (socket) => {
+    console.log(socket);
+    console.log('user connected');
+    socket.on('disconnect', function () {
+      console.log('user disconnected');
+    });
+  })
+
+
+
 
 const connectDB = async () => {
     console.log('Checkeando conexion');
@@ -27,7 +36,7 @@ const connectDB = async () => {
         process.exit(1);
     }
 }
-const PORT = 8080;
+
 ( async () => {
     await connectDB();
     app.listen(PORT, () => {
@@ -35,86 +44,9 @@ const PORT = 8080;
     })
 })();
 
-/* var clienMqtt  = mqtt.connect("mqtt://test.mosquitto.org",{clientId:"mqttjs01"});
 
-
-clienMqtt.on('connect', function () {
-    clienMqtt.subscribe('presence', function (err) {
-      if (!err) {
-        clienMqtt.publish('presence', 'Hello mqtt')
-      }
-    })
-  })
-  
-  clienMqtt.on('message', function (topic, message) {
-    // message is Buffer
-    console.log(message.toString())
-    clienMqtt.end()
-  }) */
-
-/*   const getArrayPlc = async.series([
-    function(callback){
-        console.log(callback);
-        client.connect(endPointOPc,(err)=>{
-            if (err){
-                console.log(`No se puede connectar al endpoint:${endPointOPc}`);
-            }else{console.log("Conectado")}
-            callback()
-        })
-    },
-    function(cb){
-        client.createSession((err,session)=>{
-            if(err) {return}
-            the_session = session
-            cb()
-        })
-    },
-    function(){ 
-        let array = []
-        getArrayOfVariablesString().then((res)=> {
-            array = res
-        })
-
-             setInterval(async ()=>{             
-                await Promise.all(array.map( async (nodeId) => {
-                    let plcValue = await the_session.read({nodeId:nodeId,AttributeId: AttributeIds.Value,TimestampsToReturn:TimestampsToReturn.Both}); 
-                    console.log(plcValue.value.value);
-                    return plcValue.value.value
-                })); 
-
-        },1000)
-    } 
-]) 
- */
-
-/* const triggersOPs=[
-    'ns=2;s=Simulation_Examples.Functions.Ramp1',
-    'ns=2;s=Simulation_Examples.Functions.Ramp2',
-    'ns=2;s=Simulation_Examples.Functions.Ramp3',
-    'ns=2;s=Simulation_Examples.Functions.Ramp4',
-    'ns=2;s=Simulation_Examples.Functions.Ramp5',
-    'ns=2;s=Simulation_Examples.Functions.Ramp6',
-    'ns=2;s=Simulation_Examples.Functions.Ramp7',
-    'ns=2;s=Simulation_Examples.Functions.Ramp8',
-    'ns=2;s=Simulation_Examples.Functions.Random1',
-    'ns=2;s=Simulation_Examples.Functions.Random2',
-    'ns=2;s=Simulation_Examples.Functions.Random3',
-    'ns=2;s=Simulation_Examples.Functions.Random4',
-    'ns=2;s=Simulation_Examples.Functions.Random5',
-    'ns=2;s=Simulation_Examples.Functions.Random6',
-    'ns=2;s=Simulation_Examples.Functions.Random7',
-    'ns=2;s=Simulation_Examples.Functions.Random8',
-    'ns=2;s=Simulation_Examples.Functions.Sine1',
-    'ns=2;s=Simulation_Examples.Functions.Sine2',
-    'ns=2;s=Simulation_Examples.Functions.Sine3',
-    'ns=2;s=Simulation_Examples.Functions.Sine4',
-    'ns=2;s=Simulation_Examples.Functions.User1',
-    'ns=2;s=Simulation_Examples.Functions.User2',
-    'ns=2;s=Simulation_Examples.Functions.User3',
-    'ns=2;s=Simulation_Examples.Functions.User4'
-  ] 
- */
-
+const endPointOPc = 'opc.tcp://192.168.200.197:49320'
+const client = OPCUAClient.create({endpointMustExist: false});
  async.series([
     function(callback){
         client.connect(endPointOPc,(err)=>{
@@ -132,7 +64,6 @@ clienMqtt.on('connect', function () {
         })
     },
     async function(){ 
-      
         getArrayOfVariablesString().then((res)=>{
             let nodes_to_read = [];
             res.forEach(function(entry) {
@@ -142,7 +73,7 @@ clienMqtt.on('connect', function () {
            setInterval(async()=>{
             let plcsValues = await the_session.read(nodes_to_read, max_age)
             plcsValues.forEach(value=> {
-      
+                    console.log(value.value.value);
             })
 
            },1000)     
@@ -150,9 +81,9 @@ clienMqtt.on('connect', function () {
         })
     } 
 ])   
+
  
- 
-//module.exports = getArrayPlc
+
 
 
 
