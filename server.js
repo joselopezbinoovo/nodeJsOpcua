@@ -2,12 +2,15 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const async = require('async')
+const server = require('http').Server(app);
+const PORT = 8080;
+
+
 const { sequelize} = require('./models/index')
 const {OPCUAClient,AttributeIds} = require("node-opcua");
+
 const {getArrayOfVariablesString} = require('./controller/controller');
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const PORT = 8080;
+
 
 
 app.use(express.urlencoded({extended: false}));
@@ -15,22 +18,18 @@ app.use(express.json ());
 app.use(cors());
 app.use("/api/opcUa",require("./routes/opcUaRouter"));
 
-io.on('connection', (socket) => {
-    console.log(socket);
-    console.log('user connected');
-    socket.on('disconnect', function () {
-      console.log('user disconnected');
-    });
-  })
 
-
+const io = require('socket.io')(server, {
+    cors: {
+        origins: ['http://localhost:4200']
+    }
+})
 
 
 const connectDB = async () => {
-    console.log('Checkeando conexion');
     try{
         await sequelize.authenticate()
-        console.log('Conexion establecida')
+        console.log('Conectado a BBDD')
     }catch(e){
         console.log('Conexion fallid', e);
         process.exit(1);
@@ -39,10 +38,12 @@ const connectDB = async () => {
 
 ( async () => {
     await connectDB();
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}.`);
+    server.listen(PORT, () => {
+        console.log(`Server run ${PORT}.`);
     })
 })();
+
+
 
 
 const endPointOPc = 'opc.tcp://192.168.200.197:49320'
@@ -52,7 +53,7 @@ const client = OPCUAClient.create({endpointMustExist: false});
         client.connect(endPointOPc,(err)=>{
             if (err){
                 console.log(`No se puede connectar al endpoint:${endPointOPc}`);
-            }else{console.log("Conectado")}
+            }else{console.log("Conectado al PLC")}
             callback()
         })
     },
@@ -70,14 +71,17 @@ const client = OPCUAClient.create({endpointMustExist: false});
                 nodes_to_read.push({ nodeId: entry, AttributeIds: AttributeIds.Value });
            });
            var max_age = 0;
-           setInterval(async()=>{
-            let plcsValues = await the_session.read(nodes_to_read, max_age)
-            plcsValues.forEach(value=> {
-                    console.log(value.value.value);
-            })
-
-           },1000)     
-
+           io.on('connection',(socket)=> {
+            console.log('conectado a socket');
+            setInterval(async()=>{
+                let plcsValues = await the_session.read(nodes_to_read, max_age)
+                let plcDataArray = []; 
+                plcsValues.forEach(value=> {
+                    plcDataArray.push(value.value.value)
+                })
+              socket.emit('push',{data:plcDataArray});
+               },1000) 
+        })
         })
     } 
 ])   
