@@ -1,11 +1,8 @@
 const opcUa = require('../modelos/opcUaModel');
-const async = require('async')
 
 const {
-    OPCUAServer,
     OPCUAClient,
     AttributeIds,
-    StatusCode,
     TimestampsToReturn
 } = require("node-opcua");
 const endPointOPc = 'opc.tcp://192.168.200.197:49320'
@@ -77,7 +74,7 @@ const opc = async (req, res) => {
     try {
 
         const myOpcVariable = await opcUa.findAll()
-
+            console.log(myOpcVariable);
         const cliet = OPCUAClient.create();
         cliet.on("backoff", (retry, delay) => {
             console.log("Intentado conectar ", endPointOPc, "attempt", retry);

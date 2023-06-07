@@ -21,7 +21,7 @@ app.use("/api/opcUa",require("./routes/opcUaRouter"));
 
 const io = require('socket.io')(server, {
     cors: {
-        origins: ['http://localhost:4200']
+        origins: ['http://localhost:3000']
     }
 })
 
@@ -42,8 +42,6 @@ const connectDB = async () => {
         console.log(`Server run ${PORT}.`);
     })
 })();
-
-
 
 
 const endPointOPc = 'opc.tcp://192.168.200.197:49320'
@@ -77,6 +75,7 @@ const client = OPCUAClient.create({endpointMustExist: false});
                 let plcsValues = await the_session.read(nodes_to_read, max_age)
                 let plcDataArray = []; 
                 plcsValues.forEach(value=> {
+                    console.log(value.value);
                     plcDataArray.push(value.value.value)
                 })
               socket.emit('push',{data:plcDataArray});

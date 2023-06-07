@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     conectionString: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'OpcUa',
+    modelName: 'ValoresPLC',
   });
   return OpcUa;
 };

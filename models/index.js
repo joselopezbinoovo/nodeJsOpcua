@@ -10,9 +10,10 @@ const env = process.env.NODE_ENV || 'development';
 const db = {};
 
 
-const sequelize =new Sequelize('opc-ua', 'postgres', '123456', {
+
+const sequelize = new Sequelize('productoMeikit', 'postgres', '123456', {
   host: 'localhost',
-  dialect:'postgres'
+  dialect: 'postgres',
 });
 
 /* let sequelize;

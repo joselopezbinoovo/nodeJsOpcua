@@ -2,7 +2,7 @@ const {DataTypes}= require('sequelize');
 const sequelize = require('../models/index.js').sequelize;
 
 
-  const producto = sequelize.define("OpcUas", {
+  const valorPLC = sequelize.define("ValoresPLC", {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -21,5 +21,5 @@ const sequelize = require('../models/index.js').sequelize;
     timestamps:false,
     freezeTableName: true
   });
-module.exports = producto;
+module.exports = valorPLC;
  
