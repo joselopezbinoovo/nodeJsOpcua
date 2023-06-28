@@ -125,14 +125,23 @@ const opc = async (req, res) => {
 }
 
 const getArrayOfVariablesString = async()=> {
+
     const myOpcVariable = await opcUa.findAll()
-    const array = []
-    myOpcVariable.forEach(element => {
-    array.push(element.dataValues.variableString)
-});
-
+     const array = []
+/*      var obj = {variableString:'',variableName:'',id_variable:0};
+     console.log('====================================');
+     console.log(obj);
+     console.log('===================================='); */
+  /*   let array = myOpcVariable.forEach(element => {
+        obj.variableString = element.dataValues.variableString;
+        obj.variableName = element.dataValues.variableName;
+        obj.id_variable = element.dataValues.id_variable
+    //array.push(obj)
+}); */
+for(const [key, value] of Object.entries(myOpcVariable)){
+    array.push(value.dataValues)
+  }
 return array
-
 } 
 module.exports = {
     getAll,

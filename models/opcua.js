@@ -16,7 +16,8 @@ module.exports = (sequelize, DataTypes) => {
   OpcUa.init({
     variableString: DataTypes.STRING,
     variableName: DataTypes.STRING,
-    conectionString: DataTypes.STRING
+    conectionString: DataTypes.STRING,
+    id_variable:DataTypes.NUMBER
   }, {
     sequelize,
     modelName: 'ValoresPLC',

@@ -16,6 +16,10 @@ const sequelize = require('../models/index.js').sequelize;
     },
     conectionString: {
       type: DataTypes.STRING,
+    },
+    id_variable:{
+      type: DataTypes.INTEGER
+
     }
   },{
     timestamps:false,

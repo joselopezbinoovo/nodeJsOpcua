@@ -66,24 +66,27 @@ const client = OPCUAClient.create({endpointMustExist: false});
         getArrayOfVariablesString().then((res)=>{
             let nodes_to_read = [];
             res.forEach(function(entry) {
-                nodes_to_read.push({ nodeId: entry, AttributeIds: AttributeIds.Value });
+                nodes_to_read.push({ nodeId: entry.variableString, AttributeIds: AttributeIds.Value });
            });
+           const arrayOfValues  = res; 
            var max_age = 0;
            io.on('connection',(socket)=> {
             console.log('conectado a socket');
             setInterval(async()=>{
                 let plcsValues = await the_session.read(nodes_to_read, max_age)
-                let plcDataArray = []; 
+                let arrayPlcValuesOF  = []; 
                 plcsValues.forEach(value=> {
-                    console.log(value.value);
-                    plcDataArray.push(value.value.value)
+                    //console.log(value.value.value);
+                    arrayPlcValuesOF.push(value.value.value)
                 })
-              socket.emit('push',{data:plcDataArray});
+
+            let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({...item, plcValues: arrayPlcValuesOF[indice]}))
+              socket.emit('push',{data:totalArrayPlcValues });
                },1000) 
         })
         })
     } 
-])   
+])    
 
  
 

@@ -17,7 +17,11 @@ module.exports = {
       },
       conectionString: {
         type: Sequelize.STRING
-      }
+      },
+      id_variable: {
+        type: Sequelize.INTEGER
+      },
+
     });
   },
   async down(queryInterface, Sequelize) {
