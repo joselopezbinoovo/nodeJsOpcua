@@ -1,4 +1,9 @@
 const opcUa = require('../modelos/opcUaModel');
+const EntityConfig = require('../modelos/entityConfig'); 
+
+const entity = require('../modelos/entityModel'); 
+const variables = require('../modelos/variablesModel'); 
+
 
 const {
     OPCUAClient,
@@ -126,7 +131,30 @@ const opc = async (req, res) => {
 
 const getArrayOfVariablesString = async()=> {
 
-    const myOpcVariable = await opcUa.findAll()
+    const myOpcVariable = await opcUa.findAll(/* {
+        include:[  {
+            model: EntityConfig ,
+        },
+        { 
+            model:variables,
+            include:[{
+
+                model:opcUa
+        }]
+        },
+      ],
+    } */)
+/* 
+    console.log('====================================');
+    console.log(myOpcVariable);
+    console.log('====================================');
+
+    myOpcVariable.forEach((index) => {
+        console.log('====================================');
+        console.log(index.Variables);
+        console.log('====================================');
+    })
+     */
      const array = []
 /*      var obj = {variableString:'',variableName:'',id_variable:0};
      console.log('====================================');
@@ -141,6 +169,7 @@ const getArrayOfVariablesString = async()=> {
 for(const [key, value] of Object.entries(myOpcVariable)){
     array.push(value.dataValues)
   }
+
 return array
 } 
 module.exports = {
