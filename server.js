@@ -79,8 +79,10 @@ const client = OPCUAClient.create({endpointMustExist: false});
                     //console.log(value.value.value);
                     arrayPlcValuesOF.push(value.value.value)
                 })
-
             let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({...item, plcValues: arrayPlcValuesOF[indice]}))
+
+            console.log(totalArrayPlcValues);
+       
               socket.emit('push',{data:totalArrayPlcValues });
                },1000) 
         })
