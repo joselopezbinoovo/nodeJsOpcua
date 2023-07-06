@@ -81,10 +81,12 @@ const client = OPCUAClient.create({endpointMustExist: false});
                 })
             let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({...item, plcValues: arrayPlcValuesOF[indice]}))
 
-            console.log(totalArrayPlcValues);
+            //console.log(totalArrayPlcValues);
        
               socket.emit('push',{data:totalArrayPlcValues });
                },1000) 
+               
+            /*    senData(socket) */
         })
         })
     } 
@@ -92,7 +94,19 @@ const client = OPCUAClient.create({endpointMustExist: false});
 
  
 
-
-
+/* function senData(socket){
+    if ( x ){
+        socket.emit('data1', Array.from({length:8},() => Math.floor(Math.random()* 590) +10));
+        x = !x
+    }else{
+        socket.emit('data2', Array.from({length:8},() => Math.floor(Math.random()* 590) +10));
+        x = !x
+    }
+    console.log(`data is ${x}`);
+    setTimeout( ()=> {
+        senData(socket)
+    },3000)
+}
+ */
 
 
