@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 const async = require('async')
 const server = require('http').Server(app);
-const PORT = 8080;
+const PORT = 8082;
 
 
 const { sequelize} = require('./models/index')
@@ -21,7 +21,9 @@ app.use("/api/opcUa",require("./routes/opcUaRouter"));
 
 const io = require('socket.io')(server, {
     cors: {
-        origins: ['http://localhost:3000']
+        //origins: ['http://192.168.200.23:3001']
+        origins: ['http://localhost:3001']
+
     }
 })
 
@@ -76,15 +78,15 @@ const client = OPCUAClient.create({endpointMustExist: false});
                 let plcsValues = await the_session.read(nodes_to_read, max_age)
                 let arrayPlcValuesOF  = []; 
                 plcsValues.forEach(value=> {
-                    //console.log(value.value.value);
+
                     arrayPlcValuesOF.push(value.value.value)
                 })
             let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({...item, plcValues: arrayPlcValuesOF[indice]}))
 
-            //console.log(totalArrayPlcValues);
+            console.log(totalArrayPlcValues);
        
               socket.emit('push',{data:totalArrayPlcValues });
-               },1000) 
+               },5000) 
                
             /*    senData(socket) */
         })

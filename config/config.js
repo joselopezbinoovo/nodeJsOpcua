@@ -3,21 +3,21 @@ module.exports={
     "username": "postgres",
     "password": '123456',
     "database": "opc-ua",
-    "host": "localhost",
+    "host": "producto_db",
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
     "password": '123456',
     "database": "opc-ua",
-    "host": "localhost",
+    "host": "producto_db",
     "dialect": "postgres"
   },
   "production": {
     "username": "postgres",
     "password": '123456',
     "database": "opc-ua",
-    "host": "localhost",
+    "host": "producto_db",
     "dialect": "postgres"
   }
 }
