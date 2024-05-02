@@ -1,15 +1,13 @@
-const opcUa = require('../modelos/opcUaModel');
-const EntityConfig = require('../modelos/entityConfig'); 
-
-const entity = require('../modelos/entityModel'); 
-const variables = require('../modelos/variablesModel'); 
-
+const serverConnection = require('../modelos/serverConnectioModel');
+const variables = require('../modelos/variablesModel');
 
 const {
     OPCUAClient,
     AttributeIds,
     TimestampsToReturn
 } = require("node-opcua");
+const entity = require('../modelos/entityModel');
+const valorPLC = require('../modelos/VariablePlcModel');
 const endPointOPc = 'opc.tcp://192.168.200.197:49320'
 const client = OPCUAClient.create({
     endpointMustExist: false
@@ -18,7 +16,7 @@ const getAll = async (req, res) => {
 
     try {
 
-        const OpcuA = await opcUa.findAll();
+        const OpcuA = await valorPLC.findAll();
         res.status(200).json({
             ok: true,
             msg: 'Datos obtenidos',
@@ -36,7 +34,7 @@ const getOne = async (req, res) => {
 
     try {
         const id = req.params.id
-        const OpcUaById = await opcUa.findOne({
+        const OpcUaById = await variablesPLC.findOne({
             where: {
                 id: id
             }
@@ -78,7 +76,7 @@ const getOne = async (req, res) => {
 const opc = async (req, res) => {  
     try {
 
-        const myOpcVariable = await opcUa.findAll()
+        const myOpcVariable = await variablesPLC.findAll()
             console.log(myOpcVariable);
         const cliet = OPCUAClient.create();
         cliet.on("backoff", (retry, delay) => {
@@ -131,7 +129,7 @@ const opc = async (req, res) => {
 
 const getArrayOfVariablesString = async()=> {
 
-    const myOpcVariable = await opcUa.findAll(/* {
+    const myOpcVariable = await valorPLC.findAll(/* {
         include:[  {
             model: EntityConfig ,
         },
@@ -169,12 +167,119 @@ const getArrayOfVariablesString = async()=> {
 for(const [key, value] of Object.entries(myOpcVariable)){
     array.push(value.dataValues)
   }
-
 return array
 } 
+
+
+const getServerConnections = async ( req, res )=> {
+
+
+    try {
+
+/*         const result = await serverConnection.findAll({
+            include:[
+                {
+                    model:entity,
+                    include:[
+                        { model:variables,
+                        include:[
+                            {
+                                model:valorPLC
+                            }
+                        ]
+                        }
+                    ]
+                }
+            ]
+        }) */
+        const result = await serverConnection.findAll({
+            include:[
+                {
+                    model:entity,
+                    include:[
+                        { model:variables,
+                        include:[
+                            {
+                                model:valorPLC
+                            }
+                        ]
+                        }
+                    ]
+                }
+            ]
+        }) 
+        const array = []; 
+        for(const [key, value] of Object.entries(result)){
+            array.push(value.dataValues)
+          }
+        return array
+        
+/*         const result = await serverConnection.findAll()
+        if ( !result){
+            res.status(400).json({
+                ok:false,
+                msg:'No se encuentra nnguna serverConnection'
+            })
+        }
+
+        res.status(200).json({
+            data:result,
+            ok:true,
+            msg:'datos obtenidos con exito'
+        }) */
+        
+    } catch (error) {
+        //return res.status(500).json({ message: error.message });
+    }
+
+
+}
+
+
+const getServerConnectionsPrueba = async ( req, res )=> {
+    try {
+        const result = await serverConnection.findAll({
+            include:[
+                {
+                    model:entity,
+                    include:[
+                        { model:variables,
+                        include:[
+                            {
+                                model:valorPLC
+                            }
+                        ]
+                        }
+                    ]
+                }
+            ]
+        }) 
+
+        const result1 = await serverConnection.findAll()
+        if ( !result){
+            res.status(400).json({
+                ok:false,
+                msg:'No se encuentra nnguna serverConnection'
+            })
+        }
+
+        res.status(200).json({
+            data:result1,
+            ok:true,
+            msg:'datos obtenidos con exito'
+        }) 
+        
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+
+
+}
 module.exports = {
     getAll,
     getOne,
     opc,
-    getArrayOfVariablesString
+    getArrayOfVariablesString,
+    getServerConnections,
+    getServerConnectionsPrueba
 }

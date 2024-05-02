@@ -14,13 +14,9 @@ const sequelize = require('../models/index.js').sequelize;
     variableName: {
       type: DataTypes.STRING
     },
-    conectionString: {
+    serverConnection: {
       type: DataTypes.STRING,
     },
-    id_variable:{
-      type: DataTypes.INTEGER
-
-    }
   },{
     timestamps:false,
     freezeTableName: true
