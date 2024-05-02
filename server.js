@@ -1,15 +1,12 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const async = require('async')
 const server = require('http').Server(app);
 const PORT = 8082;
 
-
 const { sequelize} = require('./models/index')
 const {OPCUAClient,AttributeIds} = require("node-opcua");
-const opcua = require('node-opcua')
-const {getArrayOfVariablesString,getServerConnections} = require('./controller/controller');
+const {getServerConnections} = require('./controller/controller');
 
 
 
@@ -47,48 +44,43 @@ const connectDB = async () => {
 
   
   // Arreglo para almacenar clientes y sesiones
-  const clientSessions = [];
+   const clientSessions = [];
 
-  // Función para conectarse a un servidor
-  async function connectToServer(serverEndpoint) {
-    const { connectionString ,Entities} = serverEndpoint; // Extraer la propiedad endpoint del objeto
+async function connectToServer(serverEndpoint) {
+    const { connectionString, socketTag, Entities } = serverEndpoint;
+    const client = OPCUAClient.create({ endpointMustExist: false });
     
-    const client = OPCUAClient.create({endpointMustExist: false});
     try {
-      await client.connect(connectionString);
-      console.log(`Conectado a ${connectionString}`);
-      
-      const session = await client.createSession();
-      clientSessions.push({ client, session });
+        await client.connect(connectionString);
+        const session = await client.createSession();
+        clientSessions.push({ client, session });
 
-      let nodes_to_read = []; 
-      Entities.forEach(async element => {
-        element.Variables.forEach(variable => {
-           console.log( variable.ValoresPLC.variableString)
-           nodes_to_read.push({ nodeId: variable.ValoresPLC.variableString, AttributeIds: AttributeIds.Value });
-        })
+        let nodes_to_read = [];
+        let arrayOfValues = [];
 
-        let max_age  = 0
+        Entities.forEach(async element => {
+            element.Variables.forEach(variable => {
+                arrayOfValues.push(variable.ValoresPLC.dataValues)
+                nodes_to_read.push({ nodeId: variable.ValoresPLC.variableString, AttributeIds: AttributeIds.Value });
+            });
+        });
 
-        let plcsValues = await session.read(nodes_to_read, max_age)
-        let arrayPlcValuesOF  = []; 
-        plcsValues.forEach(value=> {
-            console.log('====================================');
-            console.log(value.value.value);
-            console.log('====================================');
-
-            arrayPlcValuesOF.push(value.value.value)
-        })
-      });
-
-
-
-
-    } catch(err) {
-      console.error(`Error conectando a ${connectionString}:`, err);
+        // Configura el intervalo para leer y emitir datos
+        setInterval(async () => {
+            let max_age = 0;
+            let plcsValues = await session.read(nodes_to_read, max_age);
+            let arrayPlcValuesOF = [];
+            plcsValues.forEach(value => {
+                arrayPlcValuesOF.push(value.value.value);
+            });
+            let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({ ...item, plcValues: arrayPlcValuesOF[indice] }));
+            io.emit(socketTag, { data: totalArrayPlcValues });
+        }, 5000);
+        console.log(`Conectado a socket: ${socketTag}`);
+    } catch (err) {
+        console.error(`Error conectando a ${connectionString}:`, err);
     }
-  }
-  
+}
   // Conectarse a todos los servidores
   async function connectToAllServers() {
     try {
@@ -100,35 +92,77 @@ const connectDB = async () => {
     }
 }
 // Llamar a la función principal para iniciar la conexión con todos los servidores
-connectToAllServers();
+connectToAllServers(); 
+  
+
+
+
+
+
+
+
+
+
+
+   // Función para conectarse a un servidor
+/*   async function connectToServer(serverEndpoint) {
+    const { connectionString, socketTag, Entities } = serverEndpoint; // Extraer la propiedad endpoint del objeto
+    const client = OPCUAClient.create({ endpointMustExist: false });
+    try {
+        await client.connect(connectionString);
+        //  console.log(`Conectado a ${connectionString}`);
+
+        const session = await client.createSession();
+        clientSessions.push({ client, session });
+
+        let nodes_to_read = [];
+        let arrayOfValues = [];
+        Entities.forEach(async element => {
+            element.Variables.forEach(variable => {
+                arrayOfValues.push(variable.ValoresPLC.dataValues)
+                nodes_to_read.push({ nodeId: variable.ValoresPLC.variableString, AttributeIds: AttributeIds.Value });
+            });
+
+            io.on('connection', (socket) => {
+                console.log('conectado a socket');
+                setInterval(async () => {
+                    let max_age = 0;
+                    let plcsValues = await session.read(nodes_to_read, max_age);
+                    let arrayPlcValuesOF = [];
+                    plcsValues.forEach(value => {
+                        arrayPlcValuesOF.push(value.value.value);
+                    });
+                    let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({ ...item, plcValues: arrayPlcValuesOF[indice] }));
+                  socket.emit(socketTag, { data: totalArrayPlcValues });
+
+                }, 5000);
+            });
+        });
+    } catch (err) {
+        console.error(`Error conectando a ${connectionString}:`, err);
+    }
+}
+   */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*  const endPointOPc = 'opc.tcp://192.168.200.197:49320'
 const client = OPCUAClient.create({endpointMustExist: false});
  async.series([
@@ -169,17 +203,18 @@ const client = OPCUAClient.create({endpointMustExist: false});
 
                 })
             let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({...item, plcValues: arrayPlcValuesOF[indice]}))
-
-       
+            console.log('====================================');
+            console.log(totalArrayPlcValues);
+            console.log('====================================');
               socket.emit('push',{data:totalArrayPlcValues });
                },5000) 
                
         })
         })
     }   
-])     */
+])       
 
- 
+  */
 
 /* function senData(socket){
     if ( x ){
