@@ -8,6 +8,7 @@ const {
 } = require("node-opcua");
 const entity = require('../modelos/entityModel');
 const valorPLC = require('../modelos/VariablePlcModel');
+const { where } = require('sequelize');
 const endPointOPc = 'opc.tcp://192.168.200.197:49320'
 const client = OPCUAClient.create({
     endpointMustExist: false
@@ -175,23 +176,6 @@ const getServerConnections = async ( req, res )=> {
 
 
     try {
-
-/*         const result = await serverConnection.findAll({
-            include:[
-                {
-                    model:entity,
-                    include:[
-                        { model:variables,
-                        include:[
-                            {
-                                model:valorPLC
-                            }
-                        ]
-                        }
-                    ]
-                }
-            ]
-        }) */
         const result = await serverConnection.findAll({
             include:[
                 {
@@ -214,19 +198,7 @@ const getServerConnections = async ( req, res )=> {
           }
         return array
         
-/*         const result = await serverConnection.findAll()
-        if ( !result){
-            res.status(400).json({
-                ok:false,
-                msg:'No se encuentra nnguna serverConnection'
-            })
-        }
 
-        res.status(200).json({
-            data:result,
-            ok:true,
-            msg:'datos obtenidos con exito'
-        }) */
         
     } catch (error) {
         //return res.status(500).json({ message: error.message });

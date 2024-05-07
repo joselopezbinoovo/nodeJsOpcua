@@ -7,6 +7,7 @@ const PORT = 8082;
 const { sequelize} = require('./models/index')
 const {OPCUAClient,AttributeIds} = require("node-opcua");
 const {getServerConnections} = require('./controller/controller');
+const serverConnection = require("./modelos/serverConnectioModel");
 
 
 
@@ -42,62 +43,177 @@ const connectDB = async () => {
     })
 })();
 
+
   
   // Arreglo para almacenar clientes y sesiones
    const clientSessions = [];
 
-async function connectToServer(serverEndpoint) {
-    const { connectionString, socketTag, Entities } = serverEndpoint;
-    const client = OPCUAClient.create({ endpointMustExist: false });
-    
-    try {
-        await client.connect(connectionString);
-        const session = await client.createSession();
-        clientSessions.push({ client, session });
+   async function connectToServer(serverEndpoint) {
+    const { id, connectionString, socketTag, Entities } = serverEndpoint;
+    let existingSession = clientSessions.find(session => session.id === id);
+console.log(existingSession.id);
+    if (existingSession) {
+        console.log(`Ya existe una sesión para el servidor ${id}. Actualizando la sesión existente...`);
+        const { client, session } = existingSession;
+        try {
+            await session.close(); // Cerrar la sesión existente
+            console.log(`Sesión cerrada para el servidor ${id}.`);
+            // Conectar nuevamente y crear una nueva sesión
+            await client.connect(connectionString);
+            const newSession = await client.createSession();
+            existingSession.session = newSession; // Actualizar la sesión existente
+            console.log(`Nueva sesión creada para el servidor ${id}.`);
+        } catch (error) {
+            console.error(`Error actualizando la sesión para el servidor ${id}:`, error);
+            return; // Salir de la función si hay un error
+        }
+    } else {
+        // Crear una nueva conexión y sesión
+        const client = OPCUAClient.create({ endpointMustExist: false });
+        try {
+            await client.connect(connectionString);
+            const session = await client.createSession();
+            clientSessions.push({ id: id, client: client, session: session });
+            console.log(`Conectado al servidor ${id}.`);
+        } catch (err) {
+            console.error(`Error conectando a ${connectionString}:`, err);
+            return; // Salir de la función si hay un error
+        }
+    }
 
+    // Configurar el intervalo para leer y emitir datos
+    const intervalId = setInterval(async () => {
         let nodes_to_read = [];
         let arrayOfValues = [];
 
-        Entities.forEach(async element => {
+        Entities.forEach(element => {
             element.Variables.forEach(variable => {
-                arrayOfValues.push(variable.ValoresPLC.dataValues)
+                arrayOfValues.push(variable.ValoresPLC.dataValues);
                 nodes_to_read.push({ nodeId: variable.ValoresPLC.variableString, AttributeIds: AttributeIds.Value });
             });
         });
 
-        // Configura el intervalo para leer y emitir datos
-        setInterval(async () => {
-            let max_age = 0;
-            let plcsValues = await session.read(nodes_to_read, max_age);
-            let arrayPlcValuesOF = [];
-            plcsValues.forEach(value => {
-                arrayPlcValuesOF.push(value.value.value);
-            });
+        let max_age = 0;
+        try {
+            let plcsValues = await existingSession.session.read(nodes_to_read, max_age);
+            let arrayPlcValuesOF = plcsValues.map(value => value.value.value);
             let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({ ...item, plcValues: arrayPlcValuesOF[indice] }));
             io.emit(socketTag, { data: totalArrayPlcValues });
-        }, 5000);
-        console.log(`Conectado a socket: ${socketTag}`);
-    } catch (err) {
-        console.error(`Error conectando a ${connectionString}:`, err);
-    }
+        } catch (readErr) {
+            console.error(`Error leyendo datos del servidor ${id}:`, readErr);
+            clearInterval(intervalId); // Detener el intervalo
+            await tryReconnect(serverEndpoint); // Intentar reconexión
+        }
+    }, 5000);
+    console.log(`Conectado a socket: ${socketTag}`);
 }
+async function tryReconnect(serverEndpoint) {
+   const {id} = serverConnection
+    console.log(serverEndpoint);
+           console.log(`Intentando reconectar al servidor ${id}...`);
+        try {
+
+            console.log('entra al try')
+            await connectToServer(serverEndpoint)
+        } catch (reconnectErr) {
+            console.error(`Error al intentar reconectar al servidor ${id}:`, reconnectErr);
+            // Esperar un tiempo antes de intentar nuevamente la reconexión
+            setTimeout(async () => {
+                await tryReconnect(serverEndpoint);
+            }, 5000);
+        }
+    }
+    
+
+let previousServerConnections = [];
+
   // Conectarse a todos los servidores
   async function connectToAllServers() {
     try {
-        const serverEndpoints = await getServerConnections(); // Obtener los endpoints de los servidores
+        // Obtener las conexiones actuales del servidor
+        const serverEndpoints = await getServerConnections();
+
+        // Comparar con las conexiones anteriores
+        const hasChanges = checkForChanges(previousServerConnections, serverEndpoints);
+        previousServerConnections = serverEndpoints;
+        // Actualizar las conexiones anteriores
+
+        // Si hay cambios, realizar alguna acción
+        if (hasChanges) {
+            //Desconecarse de todos los clientes.
+            console.log("Se encontraron cambios en la base de datos.");
+        } else {
+            //Llamar a la funcion normal 
+            console.log("No se encontraron cambios en la base de datos.");
+            await Promise.all(serverEndpoints.map(connectToServer));
+
+        }
+
         // Conectar a todos los servidores
-        await Promise.all(serverEndpoints.map(connectToServer));
     } catch (err) {
         console.error("Error conectando a los servidores:", err);
     }
 }
+function checkForChanges(previousConnections, currentConnections) {
+    // Convertir los arrays en objetos para facilitar la comparación
+    const previousMap = arrayToObject(previousConnections);
+    const currentMap = arrayToObject(currentConnections);
+
+    // Comparar las conexiones anteriores y actuales
+    const hasChanges = JSON.stringify(previousMap) !== JSON.stringify(currentMap);
+    return hasChanges;
+}
+
+function arrayToObject(array) {
+    return array.reduce((obj, item) => {
+        obj[item.id] = item;
+        return obj;
+    }, {});
+}
 // Llamar a la función principal para iniciar la conexión con todos los servidores
-connectToAllServers(); 
   
+setInterval(connectToAllServers,10000)
 
 
+/*   // Arreglo para almacenar clientes y sesiones
+  const clientSessions = [];
 
-
+  async function connectToServer(serverEndpoint) {
+      const { connectionString, socketTag, Entities } = serverEndpoint;
+      const client = OPCUAClient.create({ endpointMustExist: false });
+      
+      try {
+          await client.connect(connectionString);
+          const session = await client.createSession();
+          clientSessions.push({ client, session });
+  
+          let nodes_to_read = [];
+          let arrayOfValues = [];
+  
+          Entities.forEach(async element => {
+              element.Variables.forEach(variable => {
+                  arrayOfValues.push(variable.ValoresPLC.dataValues)
+                  nodes_to_read.push({ nodeId: variable.ValoresPLC.variableString, AttributeIds: AttributeIds.Value });
+              });
+          });
+  
+          // Configura el intervalo para leer y emitir datos
+          setInterval(async () => {
+              let max_age = 0;
+              let plcsValues = await session.read(nodes_to_read, max_age);
+              let arrayPlcValuesOF = [];
+              plcsValues.forEach(value => {
+                  arrayPlcValuesOF.push(value.value.value);
+              });
+              let totalArrayPlcValues = arrayOfValues.map((item, indice) => ({ ...item, plcValues: arrayPlcValuesOF[indice] }));
+              io.emit(socketTag, { data: totalArrayPlcValues });
+          }, 5000);
+          console.log(`Conectado a socket: ${socketTag}`);
+      } catch (err) {
+          console.error(`Error conectando a ${connectionString}:`, err);
+      }
+  }
+   */
 
 
 

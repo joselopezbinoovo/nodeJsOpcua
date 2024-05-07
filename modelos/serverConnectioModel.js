@@ -15,6 +15,9 @@ const serverConnection= sequelize.define("ServerConnection", {
       socketTag: {
         type: DataTypes.STRING
       },
+      isDisconnected:{
+        type: DataTypes.BOOLEAN
+      }
   },{
     timestamps:false,
     freezeTableName: true
